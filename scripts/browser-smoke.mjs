@@ -11,6 +11,9 @@ const downloadPath = resolve('artifacts/browser-downloads');
 await mkdir(downloadPath, { recursive: true });
 const fixture = await readFile('test/fixtures/post.html', 'utf8');
 const videoFixture = await readFile('test/fixtures/video.html', 'utf8');
+const recoveryFixture = await readFile('test/fixtures/recovery.html', 'utf8');
+const filterFixture = await readFile('test/fixtures/filter.html', 'utf8');
+const paginationFixture = await readFile('test/fixtures/pagination.html', 'utf8');
 const context = await chromium.launchPersistentContext(profile, {
   executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium', headless: true,
   args: ['--no-sandbox'],
@@ -43,7 +46,9 @@ async function runtimeMessage(page, message, sender) {
 try {
   await context.route('https://www.facebook.com/**', (route) => {
     const url = new URL(route.request().url());
-    const body = url.searchParams.get('v') === '777' ? '<!doctype html><main role="main">Video senza DOM commenti riconoscibile</main>'
+    const videoId = url.searchParams.get('v') || url.pathname.match(/\/videos\/(\d+)/)?.[1];
+    const body = videoId === '55555' ? recoveryFixture : videoId === '88888' ? filterFixture : videoId === '44444' ? paginationFixture
+      : url.searchParams.get('v') === '777' ? '<!doctype html><main role="main">Video senza DOM commenti riconoscibile</main>'
       : url.pathname.includes('/watch') || url.pathname.includes('/videos/') ? videoFixture : fixture;
     return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body });
   });
@@ -58,6 +63,12 @@ try {
     if (api === 'runtime.send') {
       const tabId = [...pages.entries()].find(([, entry]) => entry === page)?.[0];
       return runtimeMessage(background, args[0], { id: 'test-extension', ...(tabId ? { tab: { id: tabId } } : {}) });
+    }
+    if (api === 'test.loading') {
+      const id = [...pages.entries()].find(([, entry]) => entry === page)?.[0];
+      await emit(background, 'tabUpdated', [id, { status: 'loading' }, { url: page.url() }]);
+      await emit(background, 'tabUpdated', [id, { status: 'complete' }, { url: page.url() }]);
+      return;
     }
     if (api === 'storage.get') return { [args[0]]: storage[args[0]] };
     if (api === 'storage.set') {
@@ -117,6 +128,7 @@ try {
       scripting: { executeScript: call('scripting.execute') },
       downloads: { download: call('downloads.download'), search: call('downloads.search'), onChanged: event('downloads') },
     };
+    document.addEventListener('pagination-start', () => { void globalThis.__host({ api: 'test.loading', args: [] }); });
   });
   background = await context.newPage();
   await background.goto('https://extension.test/background');
@@ -187,6 +199,70 @@ try {
   assert.equal(diagnostic.recognizedRows, 0);
   assert.equal(diagnostic.openerClicked, false);
   console.log('PASS (API simulate): diagnostica consultabile dopo errore, senza testo dei commenti.');
+
+  // Regression: loading events for the same document must not erase the count.
+  await popup.locator('#url').fill('https://www.facebook.com/demo/videos/55555/');
+  await popup.locator('#start').click();
+  await popup.waitForFunction(() => Number(document.querySelector('#count').textContent) >= 1 && document.querySelector('#status-label').textContent === 'Raccolta in corso');
+  const beforeReload = structuredClone(storage.exportState);
+  const recoveryTab = pages.get(beforeReload.tabId);
+  await emit(background, 'tabUpdated', [beforeReload.tabId, { status: 'loading' }, { url: recoveryTab.url() }]);
+  await emit(background, 'tabUpdated', [beforeReload.tabId, { status: 'complete' }, { url: recoveryTab.url() }]);
+  await runtimeMessage(background, { type: 'BARRIER' }, { id: 'test-extension' });
+  assert.equal(storage.exportState.status, 'collecting');
+  assert.equal(storage.exportState.documentToken, beforeReload.documentToken);
+  assert.ok(storage.exportState.count >= 1);
+
+  // A real reload replaces the document. The original row disappears from DOM.
+  await recoveryTab.evaluate(() => sessionStorage.setItem('secondDocument', 'yes'));
+  await emit(background, 'tabUpdated', [beforeReload.tabId, { status: 'loading' }, { url: recoveryTab.url() }]);
+  await recoveryTab.reload();
+  await emit(background, 'tabUpdated', [beforeReload.tabId, { status: 'complete' }, { url: recoveryTab.url() }]);
+  await popup.waitForFunction(() => Number(document.querySelector('#count').textContent) === 3);
+  assert.notEqual(storage.exportState.documentToken, beforeReload.documentToken);
+  assert.ok(storage.commentCheckpoint.rows.some((row) => row.text === 'Only before reload'));
+  assert.equal(await recoveryTab.locator('body').innerText().then((text) => text.includes('Only before reload')), false);
+  const stale = await runtimeMessage(background, { type: 'FAILED', runId: beforeReload.runId,
+    documentToken: beforeReload.documentToken, error: 'Stale document error', rows: [] }, { id: 'test-extension', tab: { id: beforeReload.tabId } });
+  assert.equal(stale.ignored, true);
+  assert.equal(storage.exportState.status, 'collecting');
+  console.log('PASS (API simulate): eventi loading innocui, ripresa dopo ricaricamento reale e messaggi vecchi ignorati; 3 commenti conservati.');
+
+  await recoveryTab.close();
+  await popup.waitForFunction(() => document.querySelector('#status-label').textContent === 'Operazione interrotta');
+  assert.equal(storage.exportState.count, 3);
+  await popup.locator('#export-saved').click();
+  await popup.waitForFunction(() => document.querySelector('#status-label').textContent === 'File Excel scaricato');
+  const savedSheet = strFromU8(unzipSync(await readFile(downloads.get(storage.exportState.downloadId).filename))['xl/worksheets/sheet1.xml']);
+  assert.ok(savedSheet.includes('Only before reload'));
+  assert.ok(savedSheet.includes('Loaded after resume'));
+  assert.equal((savedSheet.match(/<row /g) || []).length, 4);
+  console.log('PASS (API simulate): chiusura della scheda conserva il conteggio e permette di scaricare il checkpoint.');
+
+  await popup.locator('#url').fill('https://www.facebook.com/demo/videos/88888/');
+  await popup.locator('#start').click();
+  await popup.waitForFunction(() => document.querySelector('#message').textContent.includes('Riprenderò automaticamente'));
+  const blockedTab = pages.get(storage.exportState.tabId);
+  assert.ok(Number(await blockedTab.locator('body').getAttribute('data-all-clicks')) >= 1);
+  assert.equal(await blockedTab.locator('body').getAttribute('data-more-clicked'), null);
+  assert.equal(storage.exportState.phase, 'filter');
+  assert.equal(storage.exportState.allSelected, false);
+  // Manual selection is detected without restarting the run.
+  await blockedTab.locator('#blocked-filter span').evaluate((node) => { node.textContent = 'All comments'; });
+  await popup.waitForFunction(() => document.querySelector('#status-label').textContent === 'File Excel scaricato', undefined, { timeout: 25_000 });
+  assert.equal(storage.exportState.count, 2);
+  assert.equal(storage.exportState.allSelected, true);
+  console.log('PASS (API simulate): clic All comments inefficace mette in pausa; selezione manuale riprende View more comments.');
+
+  await popup.locator('#url').fill('https://www.facebook.com/demo/videos/44444/');
+  await popup.locator('#start').click();
+  await popup.waitForFunction(() => document.querySelector('#status-label').textContent !== 'File Excel scaricato');
+  await popup.waitForFunction(() => document.querySelector('#status-label').textContent === 'File Excel scaricato', undefined, { timeout: 30_000 });
+  const paginatedTab = pages.get(storage.exportState.tabId);
+  assert.equal(storage.exportState.count, 6);
+  assert.equal(await paginatedTab.locator('body').getAttribute('data-page-clicks'), '2');
+  assert.equal(await paginatedTab.locator('body').getAttribute('data-double-click'), null);
+  console.log('PASS (API simulate): 2 → 4 → 6 commenti con View more comments ripetuto, pulsante ricreato e loading tra i blocchi.');
   assert.deepEqual(errors, []);
 } catch (error) {
   console.error('Harness state:', JSON.stringify(storage));

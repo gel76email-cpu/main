@@ -1,4 +1,5 @@
 export const STATE_KEY = 'exportState';
+export const CHECKPOINT_KEY = 'commentCheckpoint';
 export const ACTIVE_STATUSES = ['opening', 'collecting', 'exporting'];
 
 export function parsePostUrl(input) {
@@ -29,4 +30,9 @@ export function postIdentity(input) {
   const url = new URL(input);
   return url.searchParams.get('story_fbid') || url.searchParams.get('fbid') || url.searchParams.get('v')
     || url.pathname.match(/\/(?:posts|permalink|videos|reel)\/([^/]+)/)?.[1] || '';
+}
+
+export function samePost(input, expected) {
+  try { return postIdentity(parsePostUrl(input)) === postIdentity(parsePostUrl(expected)); }
+  catch { return false; }
 }

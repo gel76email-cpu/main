@@ -1,4 +1,4 @@
-COMMENTI FACEBOOK → EXCEL — VERSIONE 0.2.0
+COMMENTI FACEBOOK → EXCEL — VERSIONE 0.3.0
 
 INSTALLAZIONE (Chrome su computer)
 1. Estrai tutto lo ZIP in una cartella permanente.
@@ -17,7 +17,13 @@ Questa versione supporta anche watch/?v=... e watch/live/?v=...
 Nei video prova ad aprire automaticamente il pulsante Comments/Commenti.
 Se resta chiuso, puoi premerlo manualmente mentre la raccolta attende.
 Per aggiornare: rimuovi la vecchia estensione da chrome://extensions,
-poi carica questa nuova cartella. Il popup deve indicare Versione 0.2.0.
+poi carica questa nuova cartella. Il popup deve indicare Versione 0.3.0.
+I caricamenti di Facebook non devono più azzerare il conteggio. Se lo
+stesso post viene ricaricato, riprende dai commenti salvati nella sessione.
+Se il filtro resta Most relevant, scegli All comments nella pagina:
+il popup attende e riprende automaticamente quando lo rileva selezionato.
+L'estensione preme View more comments per ogni blocco e attende che carichi.
+Se la raccolta si interrompe, usa Scarica i commenti salvati nel popup.
 In caso di errore usa Mostra diagnostica e copia il testo per l'assistenza:
 contiene solo conteggi e struttura, senza nomi o testi dei commenti.
 
@@ -41,5 +47,8 @@ sviluppo impedisce di installare estensioni.
 
 PRIVACY
 Elaborazione locale, nessun server dell'estensione. Non vengono esportati
-cookie o password. Il testo dei commenti rimane nella scheda durante la
-raccolta e nel file Excel che decidi di salvare.
+cookie o password. I commenti raccolti vengono conservati nella memoria
+della sessione Chrome per riprendere dopo un ricaricamento e consentire
+il download dopo un errore. Si eliminano con una nuova raccolta, il riavvio
+del browser o la disattivazione/rimozione dell'estensione. Il file Excel
+che decidi di salvare rimane sul tuo computer.

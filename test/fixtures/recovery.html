@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Recovery test</title></head><body>
+<main role="main"><a href="/demo/videos/55555/">Video</a>
+<button id="recovery-filter" aria-label="Change comments sorting" aria-haspopup="menu"><span>Most relevant</span></button>
+<div role="menu" id="recovery-menu" hidden><div role="button" id="recovery-all"><span>All comments</span><div>Show all comments, including spam.</div></div></div>
+<div id="recovery-comments"></div><button id="recovery-more" hidden>View more comments</button>
+</main>
+<script>
+ const resumed = sessionStorage.getItem('secondDocument') === 'yes';
+ const row = (id, text) => '<div role="article" aria-label="Comment by Person '+id+'"><a href="/person.'+id+'">Person '+id+'</a><div dir="auto">'+text+'</div><a href="/demo/videos/55555/?comment_id='+id+'">1 h</a></div>';
+ document.querySelector('#recovery-comments').innerHTML = resumed ? row(502, 'Only in second document') : row(501, 'Only before reload');
+ document.querySelector('#recovery-more').hidden = !resumed;
+ document.querySelector('#recovery-filter').onclick = () => { document.querySelector('#recovery-menu').hidden = false; };
+ document.querySelector('#recovery-all').onclick = () => {
+  document.querySelector('#recovery-menu').hidden = true;
+  setTimeout(() => { document.querySelector('#recovery-filter span').textContent = 'All comments'; }, 350);
+ };
+ document.querySelector('#recovery-more').onclick = (event) => {
+  document.querySelector('#recovery-comments').insertAdjacentHTML('beforeend', row(503, 'Loaded after resume'));
+  event.target.remove();
+ };
+</script></body></html>

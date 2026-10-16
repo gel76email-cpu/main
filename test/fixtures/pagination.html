@@ -1,0 +1,23 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Pagination test</title></head><body>
+<main role="main"><a href="/demo/videos/44444/">Video</a><button id="pages-filter">All comments</button>
+<div id="pages-comments"></div><div id="pages-controls"></div></main>
+<script>
+ let loaded = 0;
+ document.body.dataset.pageClicks = '0';
+ const row = (id) => '<div role="article" aria-label="Comment by Person '+id+'"><a href="/person.'+id+'">Person '+id+'</a><div dir="auto">Batch comment '+id+'</div><a href="/demo/videos/44444/?comment_id='+id+'">1 h</a></div>';
+ function batch() {
+  document.querySelector('#pages-comments').insertAdjacentHTML('beforeend', row(++loaded) + row(++loaded));
+  document.querySelector('#pages-controls').innerHTML = loaded < 6 ? '<a role="link" href="#" id="pages-more">View more comments</a>' : '';
+  const more = document.querySelector('#pages-more');
+  if (more) more.onclick = (event) => {
+   event.preventDefault();
+   if (more.getAttribute('aria-disabled') === 'true') { document.body.dataset.doubleClick = 'true'; return; }
+   document.body.dataset.pageClicks = String(Number(document.body.dataset.pageClicks) + 1);
+   more.setAttribute('aria-disabled', 'true');
+   const spinner = document.createElement('span'); spinner.setAttribute('role', 'progressbar'); spinner.textContent='Loading'; more.after(spinner);
+   document.dispatchEvent(new Event('pagination-start'));
+   setTimeout(batch, 1500);
+  };
+ }
+ batch();
+</script></body></html>

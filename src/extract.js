@@ -235,6 +235,19 @@ export function isLoadMoreLabel(label) {
   return /^(?:(?:visualizza|vedi|mostra|carica) (?:altri? |pi[uù] |i |\d+ )*(?:commenti)(?: precedenti)?|(?:view|see|load) (?:\d+ )?(?:more|previous) comments)$/i.test(text);
 }
 
+export function findLoadMoreControl(root, visible = () => true) {
+  const boundaries = new Set(commentContainers(root));
+  return [...root.querySelectorAll('button, [role="button"], [role="link"], a[href]')].find((node) => {
+    if (!visible(node) || ![node.getAttribute('aria-label'), node.textContent].filter(Boolean).some(isLoadMoreLabel)) return false;
+    // A link with this text inside a comment is user content, not pagination.
+    for (let parent = node.parentElement; parent; parent = parent.parentElement) {
+      if (boundaries.has(parent)) return false;
+      if (parent === root) break;
+    }
+    return true;
+  }) || null;
+}
+
 export function expandableCommentButtons(root) {
   const containers = commentContainers(root);
   const boundaries = new Set(containers);

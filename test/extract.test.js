@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
-import { extractComments, findPostScope, isLoadMoreLabel, expandableCommentButtons, layoutDiagnostics } from '../src/extract.js';
+import { extractComments, findPostScope, isLoadMoreLabel, findLoadMoreControl, expandableCommentButtons, layoutDiagnostics } from '../src/extract.js';
 import { parsePostUrl, postIdentity } from '../src/shared.js';
 import { findCommentsOpener, isCommentsOpener } from '../src/page-controls.js';
 
@@ -135,4 +135,9 @@ test('legge 699 commenti da div semplici ed esclude le risposte senza inglobare 
   assert.equal(new Set(rows.map((row) => row.key)).size, 699);
   assert.equal(rows[0].username, 'Autore 0');
   assert.equal(rows.at(-1).text, 'Testo 698');
+});
+
+test('trova View more comments anche come link, escludendo i link nel testo dei commenti', () => {
+  const document = documentFor('<main><div role="article" aria-label="Comment by Ana"><a href="/ana">Ana</a><div dir="auto"><a href="https://example.com">View more comments</a></div></div><a id="more" role="link" href="#">View more comments</a><button>View more replies</button></main>');
+  assert.equal(findLoadMoreControl(document).id, 'more');
 });

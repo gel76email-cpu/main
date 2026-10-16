@@ -11,6 +11,7 @@ function render(state) {
   if (!state) return;
   if (!$('url').value && state.url) $('url').value = state.url;
   $('status-label').textContent = ({ opening: 'Apertura del post', collecting: 'Raccolta in corso', exporting: 'Creazione Excel', done: 'File Excel scaricato', error: 'Operazione interrotta' })[state.status] || state.status;
+  if (state.status === 'collecting' && state.phase === 'filter') $('status-label').textContent = 'Seleziona Tutti i commenti';
   $('count').textContent = (state.count || 0).toLocaleString('it-IT');
   $('message').textContent = state.message || '';
   $('warning').textContent = state.warning || '';
@@ -19,6 +20,7 @@ function render(state) {
   $('stop').textContent = state.status === 'opening' ? 'Annulla apertura' : 'Ferma e scarica i commenti raccolti';
   $('focus').hidden = !active || !state.tabId;
   $('show-diagnostics').hidden = !state.diagnostics;
+  $('export-saved').hidden = !['error', 'done'].includes(state.status) || !state.count;
   if (!state.diagnostics) { $('diagnostics').hidden = true; $('diagnostics-label').hidden = true; }
   $('diagnostics').value = state.diagnostics ? JSON.stringify(state.diagnostics, null, 2) : '';
 }
@@ -55,6 +57,12 @@ $('show-diagnostics').addEventListener('click', () => {
   $('diagnostics-label').hidden = false;
   $('diagnostics').focus();
   $('diagnostics').select();
+});
+$('export-saved').addEventListener('click', async () => {
+  $('export-saved').disabled = true;
+  try { await request({ type: 'EXPORT_SAVED' }); }
+  catch (error) { $('message').textContent = error.message; }
+  finally { $('export-saved').disabled = false; }
 });
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'session' && changes[STATE_KEY]) render(changes[STATE_KEY].newValue);

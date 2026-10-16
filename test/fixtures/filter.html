@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Unconfirmed filter test</title></head><body>
+<main role="main"><a href="/demo/videos/88888/">Video</a>
+<button id="blocked-filter" aria-label="Change comments sorting" aria-haspopup="menu"><span>Most relevant</span></button>
+<div role="menu" id="blocked-menu" hidden><div role="button" id="blocked-all"><span>All comments</span><div>Show all comments.</div></div></div>
+<div id="blocked-comments"><div role="article" aria-label="Comment by Anna"><a href="/anna">Anna</a><div dir="auto">Initially visible</div><a href="/demo/videos/88888/?comment_id=601">1 h</a></div></div>
+<button id="blocked-more">View more comments</button>
+</main>
+<script>
+ document.querySelector('#blocked-filter').onclick = () => { document.querySelector('#blocked-menu').hidden = false; };
+ document.querySelector('#blocked-all').onclick = () => {
+  document.body.dataset.allClicks = String(Number(document.body.dataset.allClicks || 0) + 1);
+  document.querySelector('#blocked-menu').hidden = true;
+  // Simulate Facebook accepting the click while keeping Most relevant active.
+ };
+ document.querySelector('#blocked-more').onclick = (event) => {
+  document.body.dataset.moreClicked = 'true';
+  document.querySelector('#blocked-comments').insertAdjacentHTML('beforeend', '<div role="article" aria-label="Comment by Luca"><a href="/luca">Luca</a><div dir="auto">Loaded with all comments</div><a href="/demo/videos/88888/?comment_id=602">2 h</a></div>');
+  event.target.remove();
+ };
+</script></body></html>
