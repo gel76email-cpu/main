@@ -18,6 +18,9 @@ function render(state) {
   $('stop').hidden = !['opening', 'collecting'].includes(state.status);
   $('stop').textContent = state.status === 'opening' ? 'Annulla apertura' : 'Ferma e scarica i commenti raccolti';
   $('focus').hidden = !active || !state.tabId;
+  $('show-diagnostics').hidden = !state.diagnostics;
+  if (!state.diagnostics) { $('diagnostics').hidden = true; $('diagnostics-label').hidden = true; }
+  $('diagnostics').value = state.diagnostics ? JSON.stringify(state.diagnostics, null, 2) : '';
 }
 
 async function request(message) {
@@ -46,6 +49,12 @@ $('stop').addEventListener('click', async () => {
 $('focus').addEventListener('click', async () => {
   try { await chrome.tabs.update(current.tabId, { active: true }); }
   catch { $('message').textContent = 'La scheda Facebook è stata chiusa.'; }
+});
+$('show-diagnostics').addEventListener('click', () => {
+  $('diagnostics').hidden = false;
+  $('diagnostics-label').hidden = false;
+  $('diagnostics').focus();
+  $('diagnostics').select();
 });
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'session' && changes[STATE_KEY]) render(changes[STATE_KEY].newValue);

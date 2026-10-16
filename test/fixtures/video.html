@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Video test</title></head><body>
+<main role="main">
+  <article><a href="/demo/videos/1996968627664961/">Video</a>
+    <button id="open-comments" aria-label="Comments" aria-expanded="false">699 Comments</button>
+    <button id="publish">Comment</button>
+  </article>
+  <article><a href="/other/videos/999/">Suggested video</a></article>
+</main>
+<aside role="complementary" aria-label="Comments" hidden>
+  <h2>Comments</h2><button id="video-filter" aria-label="Most relevant">Most relevant</button>
+  <div id="video-menu" role="menu" hidden><button role="menuitemradio" id="video-all">All comments</button></div>
+  <div id="video-comments">
+    <div class="comment-row">
+      <a href="/anna.rossi">Anna Rossi</a>
+      <div dir="auto">Video comment… <button id="video-expand">See more</button></div>
+      <a href="/watch/live/?v=1996968627664961&amp;comment_id=301">1 d</a>
+    </div>
+    <div class="comment-row">
+      <a href="/reply.author">Reply Author</a><div dir="auto">VIDEO REPLY TO EXCLUDE</div>
+      <a href="/watch/live/?v=1996968627664961&amp;comment_id=301&amp;reply_comment_id=401">2 h</a>
+    </div>
+  </div>
+  <button id="video-more">View more comments</button>
+  <button id="video-replies">View more replies</button>
+</aside>
+<script>
+  document.querySelector('#open-comments').onclick = (event) => {
+    document.body.dataset.openerClicks = String(Number(document.body.dataset.openerClicks || 0) + 1);
+    event.target.setAttribute('aria-expanded', 'true');
+    setTimeout(() => { document.querySelector('aside').hidden = false; }, 300);
+  };
+  document.querySelector('#publish').onclick = () => { document.body.dataset.publishClicked = 'true'; };
+  document.querySelector('#video-filter').onclick = () => { document.querySelector('#video-menu').hidden = false; };
+  document.querySelector('#video-all').onclick = () => {
+    const filter = document.querySelector('#video-filter');
+    filter.textContent = 'All comments'; filter.setAttribute('aria-label', 'All comments');
+    document.querySelector('#video-menu').hidden = true;
+  };
+  document.querySelector('#video-expand').onclick = () => {
+    document.querySelector('[dir="auto"]').textContent = 'Video comment: complete text.';
+  };
+  document.querySelector('#video-more').onclick = (event) => {
+    document.querySelector('#video-comments').insertAdjacentHTML('beforeend', '<div role="listitem"><a href="/profile.php?id=22">Luca Verdi</a><div dir="auto">Second video comment.</div><a href="/demo/videos/1996968627664961/?comment_id=302">3 h</a></div>');
+    event.target.remove();
+  };
+  document.querySelector('#video-replies').onclick = () => { document.body.dataset.repliesClicked = 'true'; };
+</script>
+</body></html>

@@ -1,4 +1,4 @@
-COMMENTI FACEBOOK → EXCEL
+COMMENTI FACEBOOK → EXCEL — VERSIONE 0.2.0
 
 INSTALLAZIONE (Chrome su computer)
 1. Estrai tutto lo ZIP in una cartella permanente.
@@ -12,6 +12,14 @@ del post (copialo dalla data del post) e premi Raccogli ed esporta.
 Tieni aperta e possibilmente in primo piano la nuova scheda Facebook.
 Riapri il popup per leggere l'avanzamento o fermare la raccolta.
 Al termine scegli dove salvare il file .xlsx.
+
+Questa versione supporta anche watch/?v=... e watch/live/?v=...
+Nei video prova ad aprire automaticamente il pulsante Comments/Commenti.
+Se resta chiuso, puoi premerlo manualmente mentre la raccolta attende.
+Per aggiornare: rimuovi la vecchia estensione da chrome://extensions,
+poi carica questa nuova cartella. Il popup deve indicare Versione 0.2.0.
+In caso di errore usa Mostra diagnostica e copia il testo per l'assistenza:
+contiene solo conteggi e struttura, senza nomi o testi dei commenti.
 
 Il foglio Commenti contiene Username (nome visualizzato), Testo del
 commento, Timestamp. Il foglio Informazioni documenta la raccolta.

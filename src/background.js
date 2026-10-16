@@ -65,7 +65,7 @@ async function handle(message, sender) {
   if (!state || sender.tab?.id !== state.tabId || message.runId !== state.runId || state.status !== 'collecting') return;
   if (message.type === 'PROGRESS') await setState({ ...state, count: message.count, message: message.message,
     warning: message.allSelected ? '' : 'Filtro «Tutti i commenti» non verificato. Puoi selezionarlo nella scheda Facebook.' });
-  else if (message.type === 'FAILED') await failure(state, message.error);
+  else if (message.type === 'FAILED') await failure({ ...state, diagnostics: message.diagnostics }, message.error);
   else if (message.type === 'COMPLETE') {
     try { await exportRows(state, message); }
     catch (error) { await failure({ ...state, count: message.rows?.length || state.count }, error.message); }

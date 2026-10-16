@@ -25,3 +25,5 @@ footer { border-top: 1px solid #dfe4d9; padding: 13px 25px; color: #647265; font
 #message, .warning { margin: 7px 0 0; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
 .warning { color: #855210; }
 [hidden] { display: none !important; }
+textarea { width: 100%; margin-top: 8px; border: 1px solid #becabc; border-radius: 6px; padding: 8px; resize: vertical; font-size: 11px; }
+#diagnostics-label { margin-top: 12px; font-weight: 400; line-height: 1.5; }

@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
-import { extractComments, findPostScope, isLoadMoreLabel, expandableCommentButtons } from '../src/extract.js';
-import { parsePostUrl } from '../src/shared.js';
+import { extractComments, findPostScope, isLoadMoreLabel, expandableCommentButtons, layoutDiagnostics } from '../src/extract.js';
+import { parsePostUrl, postIdentity } from '../src/shared.js';
+import { findCommentsOpener, isCommentsOpener } from '../src/page-controls.js';
 
 const url = 'https://www.facebook.com/demo/posts/12345';
 const fixture = readFileSync(new URL('./fixtures/post.html', import.meta.url), 'utf8');
@@ -72,4 +73,66 @@ test('espansione del testo e caricamento non selezionano risposte o menu', () =>
 test('usa alt delle emoji e rappresenta commenti con sole immagini', () => {
   const document = documentFor(`<div role="article" aria-label="Comment by Ana"><a href="/ana">Ana</a><div dir="auto">Ciao <img alt="😊"></div></div><div role="article" aria-label="Comment by Bea"><a href="/bea">Bea</a><img alt="Una foto di un gatto"></div>`);
   assert.deepEqual(extractComments(document).map((row) => row.text), ['Ciao 😊', '[Immagine: Una foto di un gatto]']);
+});
+
+const videoUrl = 'https://www.facebook.com/watch/live/?v=1996968627664961';
+const videoFixture = readFileSync(new URL('./fixtures/video.html', import.meta.url), 'utf8');
+test('accetta watch/live e watch preservando v e riconosce lo stesso video', () => {
+  assert.equal(parsePostUrl(`${videoUrl}&ref=watch_permalink`), videoUrl);
+  assert.equal(parsePostUrl('https://www.facebook.com/watch/?v=1996968627664961'), 'https://www.facebook.com/watch/?v=1996968627664961');
+  assert.equal(postIdentity(videoUrl), postIdentity('https://www.facebook.com/demo/videos/1996968627664961/'));
+  assert.throws(() => parsePostUrl('https://www.facebook.com/watch/'));
+});
+
+test('il controllo Comments apre il pannello, senza selezionare Comment o risposte', () => {
+  const document = new JSDOM(videoFixture, { url: videoUrl }).window.document;
+  const scope = findPostScope(document, videoUrl);
+  assert.equal(findCommentsOpener(scope).id, 'open-comments');
+  assert.equal(extractComments(document).length, 0, 'i commenti nel pannello nascosto non sono visibili');
+  for (const label of ['Comments', '699 Comments', 'Commenti (699)', 'View comments', 'All comments', 'Mostra commenti']) assert.ok(isCommentsOpener(label), label);
+  for (const label of ['Comment', 'Commenta', 'Publish comment', 'View more replies', 'Reply', 'Rispondi']) assert.equal(isCommentsOpener(label), false, label);
+});
+
+test('trova i commenti video in un pannello esterno a main senza role=article', () => {
+  const document = new JSDOM(videoFixture, { url: videoUrl }).window.document;
+  document.querySelector('aside').hidden = false;
+  const scope = findPostScope(document, videoUrl);
+  assert.equal(scope.tagName, 'ASIDE');
+  const rows = extractComments(scope, videoUrl);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].username, 'Anna Rossi');
+  assert.equal(rows[0].timestamp, '1 d');
+  assert.equal(expandableCommentButtons(scope)[0].id, 'video-expand');
+  assert.ok(!JSON.stringify(rows).includes('VIDEO REPLY'));
+});
+
+test('apre il pannello anche nel lettore video senza landmark main', () => {
+  const document = new JSDOM('<div role="dialog"><video></video><button aria-label="Comments">699</button></div>', { url: videoUrl }).window.document;
+  assert.equal(findPostScope(document, videoUrl).getAttribute('role'), 'dialog');
+});
+
+test('include il contenitore passato come root e scarta commenti di altri video', () => {
+  const document = documentFor('<div role="article" aria-label="Comment by Ana"><a href="/ana">Ana</a><div dir="auto">Ciao</div><a href="/demo/posts/12345?comment_id=5">2 h</a></div>');
+  assert.equal(extractComments(document.querySelector('[role="article"]'), url).length, 1);
+  assert.equal(extractComments(document, videoUrl).length, 0);
+});
+
+test('diagnostica composta da conteggi e struttura, senza dati dei commentatori', () => {
+  const document = new JSDOM(videoFixture, { url: videoUrl }).window.document;
+  document.querySelector('aside').hidden = false;
+  const diagnostic = layoutDiagnostics(document, document.querySelector('aside'));
+  assert.equal(diagnostic.pageKind, 'watch');
+  assert.equal(diagnostic.recognizedRows, 1);
+  const serialized = JSON.stringify(diagnostic);
+  for (const text of ['Anna', 'Reply Author', 'Video comment', '1996968627664961', 'https://']) assert.ok(!serialized.includes(text), text);
+});
+
+test('legge 699 commenti da div semplici ed esclude le risposte senza inglobare la lista', () => {
+  const html = Array.from({ length: 699 }, (_, index) => `<div><a href="/person.${index}">Autore ${index}</a><div dir="auto">Testo ${index}</div><a href="/watch/live/?v=1996968627664961&amp;comment_id=${index + 1}">1 h</a></div>`).join('');
+  const document = new JSDOM(`<main role="main">${html}<div><a href="/reply">Risposta</a><div dir="auto">DA ESCLUDERE</div><a href="/watch/live/?v=1996968627664961&amp;comment_id=1&amp;reply_comment_id=1000">2 h</a></div></main>`, { url: videoUrl }).window.document;
+  const rows = extractComments(document.querySelector('main'), videoUrl);
+  assert.equal(rows.length, 699);
+  assert.equal(new Set(rows.map((row) => row.key)).size, 699);
+  assert.equal(rows[0].username, 'Autore 0');
+  assert.equal(rows.at(-1).text, 'Testo 698');
 });

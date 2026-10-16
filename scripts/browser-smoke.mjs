@@ -10,6 +10,7 @@ const profile = await mkdtemp('/tmp/facebook-excel-browser-');
 const downloadPath = resolve('artifacts/browser-downloads');
 await mkdir(downloadPath, { recursive: true });
 const fixture = await readFile('test/fixtures/post.html', 'utf8');
+const videoFixture = await readFile('test/fixtures/video.html', 'utf8');
 const context = await chromium.launchPersistentContext(profile, {
   executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium', headless: true,
   args: ['--no-sandbox'],
@@ -40,7 +41,12 @@ async function runtimeMessage(page, message, sender) {
 }
 
 try {
-  await context.route('https://www.facebook.com/**', (route) => route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: fixture }));
+  await context.route('https://www.facebook.com/**', (route) => {
+    const url = new URL(route.request().url());
+    const body = url.searchParams.get('v') === '777' ? '<!doctype html><main role="main">Video senza DOM commenti riconoscibile</main>'
+      : url.pathname.includes('/watch') || url.pathname.includes('/videos/') ? videoFixture : fixture;
+    return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body });
+  });
   await context.route('https://extension.test/**', async (route) => {
     const path = new URL(route.request().url()).pathname.slice(1);
     if (!path || path === 'background') return route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>Background test harness</title>' });
@@ -154,6 +160,33 @@ try {
   await popup.waitForFunction(() => document.querySelector('#status-label').textContent === 'Operazione interrotta');
   assert.ok((await popup.locator('#message').textContent()).includes('chiusa'));
   console.log('PASS (API simulate): chiusura della scheda segnalata senza raccolta bloccata.');
+
+  await popup.locator('#url').fill('https://www.facebook.com/watch/live/?ref=watch_permalink&v=1996968627664961');
+  await popup.locator('#start').click();
+  await popup.waitForFunction(() => document.querySelector('#status-label').textContent === 'File Excel scaricato', undefined, { timeout: 30_000 });
+  const videoState = storage.exportState;
+  assert.equal(videoState.count, 2);
+  const videoTab = pages.get(videoState.tabId);
+  assert.equal(await videoTab.locator('body').getAttribute('data-opener-clicks'), '1');
+  assert.equal(await videoTab.locator('body').getAttribute('data-replies-clicked'), null);
+  assert.equal(await videoTab.locator('body').getAttribute('data-publish-clicked'), null);
+  assert.equal(await videoTab.locator('#video-filter').textContent(), 'All comments');
+  const videoSheet = strFromU8(unzipSync(await readFile(downloads.get(videoState.downloadId).filename))['xl/worksheets/sheet1.xml']);
+  assert.ok(videoSheet.includes('Video comment: complete text.'));
+  assert.ok(videoSheet.includes('Second video comment.'));
+  assert.ok(!videoSheet.includes('VIDEO REPLY'));
+  console.log('PASS (API simulate): watch/live → apertura Comments → pannello esterno a main → div/listitem → XLSX senza risposte.');
+
+  await popup.locator('#url').fill('https://www.facebook.com/watch/?v=777');
+  await popup.locator('#start').click();
+  await popup.waitForFunction(() => document.querySelector('#status-label').textContent === 'Raccolta in corso');
+  await popup.locator('#stop').click();
+  await popup.waitForFunction(() => document.querySelector('#status-label').textContent === 'Operazione interrotta');
+  await popup.locator('#show-diagnostics').click();
+  const diagnostic = JSON.parse(await popup.locator('#diagnostics').inputValue());
+  assert.equal(diagnostic.recognizedRows, 0);
+  assert.equal(diagnostic.openerClicked, false);
+  console.log('PASS (API simulate): diagnostica consultabile dopo errore, senza testo dei commenti.');
   assert.deepEqual(errors, []);
 } catch (error) {
   console.error('Harness state:', JSON.stringify(storage));

@@ -12,20 +12,21 @@ export function parsePostUrl(input) {
   const queryPost = /\/(?:story|permalink|photo)\.php$/.test(url.pathname)
     && (url.searchParams.has('story_fbid') || url.searchParams.has('fbid'));
   const photo = /^\/photo\/?$/.test(url.pathname) && url.searchParams.has('fbid');
-  if (!pathPost && !queryPost && !photo) {
+  const watch = /^\/watch(?:\/live)?\/?$/.test(url.pathname) && /^\d+$/.test(url.searchParams.get('v') || '');
+  if (!pathPost && !queryPost && !photo && !watch) {
     throw new Error('Serve il permalink del post: apri il post e copia il link dalla data. I link brevi /share/ non sono supportati.');
   }
   url.protocol = 'https:';
   url.hostname = 'www.facebook.com';
   url.hash = '';
   for (const name of [...url.searchParams.keys()]) {
-    if (!['id', 'story_fbid', 'fbid', 'set'].includes(name)) url.searchParams.delete(name);
+    if (!['id', 'story_fbid', 'fbid', 'set', 'v'].includes(name)) url.searchParams.delete(name);
   }
   return url.href;
 }
 
 export function postIdentity(input) {
   const url = new URL(input);
-  return url.searchParams.get('story_fbid') || url.searchParams.get('fbid')
+  return url.searchParams.get('story_fbid') || url.searchParams.get('fbid') || url.searchParams.get('v')
     || url.pathname.match(/\/(?:posts|permalink|videos|reel)\/([^/]+)/)?.[1] || '';
 }

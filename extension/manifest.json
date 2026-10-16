@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Commenti Facebook → Excel",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Esporta in Excel i commenti principali di un post Facebook accessibile dalla tua sessione.",
   "minimum_chrome_version": "120",
   "permissions": ["scripting", "storage", "downloads"],

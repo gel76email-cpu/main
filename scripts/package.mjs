@@ -11,5 +11,8 @@ async function files(directory, prefix = '') {
   return entries;
 }
 await mkdir('artifacts', { recursive: true });
-await writeFile('artifacts/facebook-commenti-excel.zip', zipSync(await files('dist'), { level: 6 }));
-console.log('Pacchetto creato: artifacts/facebook-commenti-excel.zip');
+const { version } = JSON.parse(await readFile('package.json', 'utf8'));
+const archive = zipSync(await files('dist'), { level: 6 });
+await writeFile('artifacts/facebook-commenti-excel.zip', archive);
+await writeFile(`artifacts/facebook-commenti-excel-${version}.zip`, archive);
+console.log(`Pacchetti creati: artifacts/facebook-commenti-excel.zip e artifacts/facebook-commenti-excel-${version}.zip`);

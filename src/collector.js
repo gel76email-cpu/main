@@ -1,4 +1,5 @@
-import { extractComments, findPostScope, isLoadMoreLabel, expandableCommentButtons } from './extract.js';
+import { extractComments, findPostScope, isLoadMoreLabel, expandableCommentButtons, commentContainers, layoutDiagnostics } from './extract.js';
+import { findCommentsOpener, findSortControl } from './page-controls.js';
 
 // Injection is requested once per run, with no persistent access to other Facebook tabs.
 if (!globalThis.__facebookExcelCollector) {
@@ -9,12 +10,11 @@ if (!globalThis.__facebookExcelCollector) {
   const send = (message) => chrome.runtime.sendMessage(message).catch(() => {});
   const visible = (el) => !!el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden';
   const allLabel = /^(?:tutti i commenti|all comments)(?:\b|$)/i;
-  const filterLabel = /^(?:pi[uù] (?:pertinenti|rilevanti|recenti)|most relevant|newest|tutti i commenti|all comments)$/i;
 
   async function chooseAll(scope) {
-    const filter = [...scope.querySelectorAll('button, [role="button"]')].find((el) => visible(el) && filterLabel.test(el.textContent.trim()));
+    const filter = findSortControl(scope, visible);
     if (!filter) return false;
-    if (allLabel.test(filter.textContent.trim())) return true;
+    if (allLabel.test(filter.getAttribute('aria-label') || filter.textContent.trim())) return true;
     filter.click();
     await pause(450);
     const option = [...document.querySelectorAll('[role="menuitem"], [role="menuitemradio"], [role="option"]')]
@@ -26,7 +26,7 @@ if (!globalThis.__facebookExcelCollector) {
   }
 
   function scrollComments(scope) {
-    const comments = scope.querySelectorAll('[role="article"], article');
+    const comments = commentContainers(scope);
     const last = comments[comments.length - 1];
     if (last) last.scrollIntoView({ block: 'end', behavior: 'instant' });
     let target = last?.parentElement || scope;
@@ -49,20 +49,34 @@ if (!globalThis.__facebookExcelCollector) {
     let allSelected = false;
     let idle = 0;
     let passes = 0;
+    let clickedOpener = false;
+    let lastScope = null;
     let reason = 'Nessun altro commento principale caricabile rilevato.';
     try {
       await pause(1500);
       while (!stopRequested && Date.now() - started < 900_000) {
-        const scope = findPostScope(document, url);
+        let scope = findPostScope(document, url);
+        lastScope = scope;
         if (!scope) {
           if (++passes > 12) throw new Error('Post non disponibile. Verifica di essere connesso a Facebook e che il link sia accessibile.');
           await pause(1000);
           continue;
         }
+        if (!clickedOpener && !commentContainers(scope).length && !findSortControl(scope, visible)) {
+          const opener = findCommentsOpener(scope, visible);
+          if (opener) {
+            clickedOpener = true;
+            await send({ type: 'PROGRESS', runId, count: rows.size, allSelected, message: 'Apertura del pannello commenti del video…' });
+            opener.click();
+            await pause(1500);
+            scope = findPostScope(document, url) || scope;
+            lastScope = scope;
+          }
+        }
         if (!allSelected && passes % 8 === 0) allSelected = await chooseAll(scope);
         const count = rows.size;
         let changed = false;
-        for (const row of extractComments(scope)) {
+        for (const row of extractComments(scope, url)) {
           const before = rows.get(row.key);
           if (before && (before.text !== row.text || before.timestamp !== row.timestamp)) changed = true;
           rows.set(row.key, row);
@@ -73,9 +87,10 @@ if (!globalThis.__facebookExcelCollector) {
         scrollComments(scope);
         idle = rows.size === count && !changed ? idle + 1 : 0;
         await send({ type: 'PROGRESS', runId, count: rows.size, allSelected,
-          message: more ? 'Caricamento di altri commenti principali…' : 'Lettura dei commenti principali…' });
+          message: !rows.size ? 'Attendo i commenti. Se il pannello è chiuso, premi «Comments» nella scheda Facebook.'
+            : more ? 'Caricamento di altri commenti principali…' : 'Lettura dei commenti principali…' });
         // A stubborn button or unloaded section is not proof that all comments were read.
-        if (idle >= 8) {
+        if (idle >= (rows.size ? 8 : 24)) {
           if (more) reason = 'Caricamento fermo: il pulsante per altri commenti non produce nuovi risultati.';
           break;
         }
@@ -86,11 +101,13 @@ if (!globalThis.__facebookExcelCollector) {
       else if (Date.now() - started >= 900_000) reason = 'Raggiunto il limite di 15 minuti: esportazione potenzialmente parziale.';
       // Capture anything that arrived during the last asynchronous wait.
       const finalScope = findPostScope(document, url);
-      if (finalScope) for (const row of extractComments(finalScope)) rows.set(row.key, row);
-      if (!rows.size) throw new Error('Nessun commento principale riconosciuto. Verifica accesso, presenza di commenti e filtro «Tutti i commenti». Facebook potrebbe aver modificato la pagina.');
+      if (finalScope) for (const row of extractComments(finalScope, url)) rows.set(row.key, row);
+      if (!rows.size) throw new Error('Non riesco a leggere i commenti di questa pagina. Apri «Comments» nella scheda Facebook e riprova. Se sono già visibili, mostrami la diagnostica dal popup.');
       await send({ type: 'COMPLETE', runId, rows: [...rows.values()], allSelected, reason });
     } catch (error) {
-      await send({ type: 'FAILED', runId, error: error.message });
+      let diagnostics;
+      try { diagnostics = { ...layoutDiagnostics(document, lastScope), openerClicked: clickedOpener }; } catch { diagnostics = { schema: 1, diagnosticError: true }; }
+      await send({ type: 'FAILED', runId, error: error.message, diagnostics });
     } finally { running = false; }
   }
 
