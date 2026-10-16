@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><title>Post di prova</title></head><body>
+<main role="main"><article aria-label="Post di prova">
+  <h1>Un post di prova</h1><a href="/demo/posts/12345">15 ottobre 2026</a>
+  <button id="filter">Più pertinenti</button>
+  <div id="menu" role="menu" hidden><button role="menuitemradio" id="all">Tutti i commenti</button></div>
+  <div id="comments">
+    <div role="article" aria-label="Commento di Anna Rossi">
+      <a href="/anna.rossi">Anna Rossi</a>
+      <div data-ad-preview="message" dir="auto">Ciao &amp; grazie! <img alt="😊" src="data:,"> <button id="expand">Mostra altro</button></div>
+      <a href="/demo/posts/12345?comment_id=101"><time datetime="2026-10-15T10:30:00+02:00">2 h</time></a>
+      <button>Mi piace</button><button id="replies">Visualizza 2 risposte</button>
+      <div role="article" aria-label="Commento di Risposta Annidata">
+        <a href="/risposta">Risposta Annidata</a><div dir="auto">DA ESCLUDERE</div>
+        <a href="/demo/posts/12345?comment_id=101&amp;reply_comment_id=201">1 h</a>
+      </div>
+    </div>
+    <div role="article" aria-label="Commento di Luca Verdi">
+      <a href="/profile.php?id=22">Luca Verdi</a><div dir="auto">=HYPERLINK("https://example.com")<br>Seconda riga</div>
+      <a href="/demo/posts/12345?comment_id=102" title="giovedì 15 ottobre 2026 alle ore 10:45">1 h</a>
+    </div>
+    <div role="article" aria-label="Commento di Risposta Piatta">
+      <a href="/flat">Risposta Piatta</a><div dir="auto">ANCHE QUESTA DA ESCLUDERE</div>
+      <a href="/demo/posts/12345?comment_id=102&amp;reply_comment_id=202">20 min</a>
+    </div>
+  </div>
+  <button id="more">Visualizza altri commenti</button>
+</article></main>
+<script>
+  document.querySelector('#filter').onclick = () => { document.querySelector('#menu').hidden = false; };
+  document.querySelector('#all').onclick = () => {
+    document.querySelector('#filter').textContent = 'Tutti i commenti';
+    document.querySelector('#menu').hidden = true;
+  };
+  document.querySelector('#expand').onclick = () => {
+    document.querySelector('[data-ad-preview="message"]').textContent = 'Ciao & grazie! 😊 Testo completo del commento.';
+  };
+  document.querySelector('#replies').onclick = () => { document.body.dataset.repliesClicked = 'true'; };
+  document.querySelector('#more').onclick = (event) => {
+    document.querySelector('#comments').insertAdjacentHTML('beforeend', '<div role="article" aria-label="Comment by Zoë"><a href="/zoe">Zoë</a><div dir="auto">Un altro commento: &lt;ciao&gt;</div><a href="/demo/posts/12345?comment_id=103">5 min</a></div>');
+    event.target.remove();
+  };
+</script>
+</body></html>

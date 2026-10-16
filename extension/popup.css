@@ -1,0 +1,27 @@
+:root { color-scheme: light; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #182d29; background: #f7f8f2; }
+* { box-sizing: border-box; }
+body { width: 396px; margin: 0; }
+header { display: flex; align-items: center; gap: 10px; padding: 22px 25px 18px; border-bottom: 1px solid #dfe4d9; font-size: 11px; font-weight: 750; letter-spacing: 1.7px; }
+.mark { display: grid; place-items: center; width: 27px; height: 27px; border-radius: 8px; background: #1b5b44; color: #fff; font-size: 22px; }
+.badge { margin-left: auto; padding: 5px 7px; background: #e7eddc; border-radius: 5px; letter-spacing: 0; color: #45613c; }
+main { padding: 24px 25px 18px; }
+h1 { margin: 0 0 12px; font-size: 30px; line-height: 1.13; font-weight: 650; letter-spacing: -1.1px; }
+.intro { color: #59685f; font-size: 13px; line-height: 1.6; margin: 0 0 24px; }
+label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+input { width: 100%; border: 1px solid #becabc; border-radius: 9px; padding: 13px 11px; font: inherit; font-size: 12px; background: #fff; color: #182d29; }
+input:focus { outline: 2px solid #619273; outline-offset: 2px; }
+button { border: 0; border-radius: 9px; padding: 13px 15px; width: 100%; background: #1b5b44; color: white; margin-top: 11px; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+button:hover { background: #144733; }
+button:focus-visible { outline: 2px solid #619273; outline-offset: 2px; }
+button:disabled { cursor: wait; opacity: .6; }
+.secondary { display: block; border: 1px solid #b6c8b6; background: transparent; color: #1b5b44; font-size: 12px; padding: 10px; }
+.secondary:hover { background: #e7eddc; }
+.columns { display: flex; justify-content: space-between; gap: 5px; font-size: 10px; color: #5b6c5d; margin: 22px 0 16px; padding-top: 17px; border-top: 1px solid #dfe4d9; }
+.note { font-size: 11px; line-height: 1.6; color: #6b756d; margin: 0; }
+footer { border-top: 1px solid #dfe4d9; padding: 13px 25px; color: #647265; font-size: 10px; }
+#status-panel { margin-top: 20px; background: #edf1e5; border-radius: 9px; padding: 14px; }
+.status-head { display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 650; }
+#count { font-size: 22px; font-variant-numeric: tabular-nums; }
+#message, .warning { margin: 7px 0 0; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.warning { color: #855210; }
+[hidden] { display: none !important; }

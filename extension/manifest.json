@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Commenti Facebook → Excel",
+  "version": "0.1.0",
+  "description": "Esporta in Excel i commenti principali di un post Facebook accessibile dalla tua sessione.",
+  "minimum_chrome_version": "120",
+  "permissions": ["scripting", "storage", "downloads"],
+  "host_permissions": ["https://www.facebook.com/*"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": { "default_popup": "popup.html", "default_title": "Esporta commenti Facebook" },
+  "icons": { "16": "icons/16.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "content_security_policy": { "extension_pages": "script-src 'self'; object-src 'self'" }
+}

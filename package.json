@@ -1,0 +1,14 @@
+{
+  "name": "facebook-commenti-excel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.js",
+    "test:browser": "node scripts/browser-smoke.mjs",
+    "package": "npm run build && node scripts/package.mjs"
+  },
+  "dependencies": { "fflate": "0.8.2" },
+  "devDependencies": { "esbuild": "0.25.12", "jsdom": "26.1.0", "playwright-core": "1.56.1" }
+}

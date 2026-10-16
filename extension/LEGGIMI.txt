@@ -1,0 +1,37 @@
+COMMENTI FACEBOOK → EXCEL
+
+INSTALLAZIONE (Chrome su computer)
+1. Estrai tutto lo ZIP in una cartella permanente.
+2. Apri chrome://extensions e attiva Modalità sviluppatore.
+3. Premi Carica estensione non pacchettizzata.
+4. Seleziona questa cartella: deve contenere manifest.json.
+
+USO
+Accedi a Facebook. Clicca l'icona dell'estensione, incolla il permalink
+del post (copialo dalla data del post) e premi Raccogli ed esporta.
+Tieni aperta e possibilmente in primo piano la nuova scheda Facebook.
+Riapri il popup per leggere l'avanzamento o fermare la raccolta.
+Al termine scegli dove salvare il file .xlsx.
+
+Il foglio Commenti contiene Username (nome visualizzato), Testo del
+commento, Timestamp. Il foglio Informazioni documenta la raccolta.
+Le risposte vengono escluse quando riconoscibili nella pagina.
+
+LIMITI
+Solo i commenti accessibili e caricabili dalla tua sessione possono
+essere raccolti. Non è garantito che Facebook mostri tutti i commenti.
+Se il popup avvisa sul filtro, seleziona Tutti i commenti nella scheda.
+Il timestamp mantiene la precisione disponibile (anche relativa: 2 h).
+La raccolta termina anche dopo 15 minuti o otto passaggi senza novità.
+Link brevi /share/: aprili e copia il permalink definitivo prima dell'uso.
+I controlli di caricamento sono riconosciuti in italiano e inglese.
+
+Questa prima versione è stata verificata su pagine di prova simulate.
+Il funzionamento su un post reale e con le API native dell'estensione
+deve essere verificato nel tuo Chrome: il browser cloud usato per lo
+sviluppo impedisce di installare estensioni.
+
+PRIVACY
+Elaborazione locale, nessun server dell'estensione. Non vengono esportati
+cookie o password. Il testo dei commenti rimane nella scheda durante la
+raccolta e nel file Excel che decidi di salvare.

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Commenti Facebook → Excel</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header><span class="mark" aria-hidden="true">↓</span><span>COMMENTI / EXCEL</span><span class="badge">.xlsx</span></header>
+  <main>
+    <h1>Le conversazioni,<br>in un foglio.</h1>
+    <p class="intro">Esporta i commenti principali di un post Facebook. Le risposte vengono escluse.</p>
+    <form id="form">
+      <label for="url">Link del post</label>
+      <input id="url" name="url" type="url" placeholder="https://www.facebook.com/…/posts/…" required autocomplete="off">
+      <button id="start" type="submit">Raccogli ed esporta <span aria-hidden="true">↗</span></button>
+    </form>
+    <section id="status-panel" aria-live="polite" hidden>
+      <div class="status-head"><span id="status-label">In attesa</span><strong id="count">0</strong></div>
+      <p id="message"></p>
+      <p id="warning" class="warning" hidden></p>
+      <button id="focus" class="secondary" hidden>Apri la scheda Facebook</button>
+      <button id="stop" class="secondary" hidden>Ferma e scarica i commenti raccolti</button>
+    </section>
+    <div class="columns"><span>01 · Username</span><span>02 · Commento</span><span>03 · Timestamp</span></div>
+    <p class="note">Si apre una scheda Facebook: accedi prima e tienila aperta durante la raccolta. Vengono esportati solo i commenti accessibili e caricabili; filtri e limiti di Facebook possono escluderne alcuni. Il timestamp conserva la precisione mostrata da Facebook.</p>
+  </main>
+  <footer>Elaborazione locale · Nessun server esterno</footer>
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

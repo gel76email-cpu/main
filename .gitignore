@@ -1,0 +1,5 @@
+node_modules/
+dist/
+artifacts/*
+!artifacts/facebook-commenti-excel.zip
+*.log
